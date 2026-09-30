@@ -21,6 +21,7 @@ from fabweave.queue_time.enforcer import QueueLimit, queue_time_decision
 from fabweave.recipe.qualification import Qualification, qualification_decision
 from fabweave.reticle.reservation import Reservation, ReservationBook
 from fabweave.rework.authorization import ReworkPolicy, authorization_decision
+from fabweave.scrap.writeoff import ScrapCase, ScrapLedger
 from fabweave.shipment.commit import Allocation, CommitLedger
 from fabweave.spc.control import western_electric_rules
 from fabweave.takt.monitor import TaktResult, takt_result
@@ -230,6 +231,50 @@ def merge_and_commit(request_id: str, lots: list[Lot], ledger: CommitLedger, ord
     merged = merge_lots(request_id, lots)
     allocation = ledger.allocate(request_id, order_id, merged.quantity)
     return merged, allocation
+
+
+def request_scrap_against_commitments(
+    scrap_ledger: ScrapLedger,
+    commit_ledger: CommitLedger,
+    scrap_id: str,
+    units: int,
+    reason: str,
+    defect_code: str | None,
+    at: int,
+    actor: str,
+    event_id: str,
+) -> ScrapCase:
+    """Raise a scrap request while protecting units already promised to orders."""
+    return scrap_ledger.request(
+        scrap_id,
+        units,
+        reason,
+        defect_code,
+        commit_ledger.committed_units,
+        at,
+        actor,
+        event_id,
+    )
+
+
+def execute_scrap_against_commitments(
+    scrap_ledger: ScrapLedger,
+    commit_ledger: CommitLedger,
+    scrap_id: str,
+    expected_version: int,
+    event_id: str,
+    actor: str,
+    at: int,
+) -> ScrapCase:
+    """Execute scrap, re-checking that no committed quantity is deducted."""
+    return scrap_ledger.execute(
+        scrap_id,
+        expected_version,
+        commit_ledger.committed_units,
+        event_id,
+        actor,
+        at,
+    )
 
 
 def dedicated_qualification(

@@ -48,6 +48,9 @@ class EventLog:
         self._ids[event_id] = event
         return deepcopy(event)
 
+    def has_event(self, event_id: str) -> bool:
+        return event_id in self._ids
+
     def read(self, stream: str) -> tuple[Event, ...]:
         return tuple(deepcopy(self._streams.get(stream, [])))
 

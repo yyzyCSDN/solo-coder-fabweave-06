@@ -60,3 +60,11 @@ class CommitLedger:
     def available(self) -> int:
         reserved = sum(item.units for item in self._allocations.values())
         return committed_units(self._good, reserved, self._safety, self._pending_scrap, self._quarantine)
+
+    @property
+    def committed_units(self) -> int:
+        return sum(item.units for item in self._allocations.values())
+
+    @property
+    def good_units(self) -> int:
+        return self._good
